@@ -6,10 +6,14 @@ from chessdotcom import get_player_stats, get_player_game_archives
 import pprint
 import pandas as pd
 
+from hashlib import md5
+
 # SQL
 import sqlalchemy
 from sqlalchemy.orm import sessionmaker
 import sqlite3
+
+#====================================================================================================
 
 def INFO(str):
     print(f"[INFO]     {str}")
@@ -49,7 +53,7 @@ def main(args):
         exit(1)
 
     # preparing to turn into dataframe
-    time_class, player_colour, opening, game_url, player_result, opponent_result = [], [], [], [], [], []
+    game_url_hash, time_class, player_colour, opening, game_url, player_result, opponent_result = [], [], [], [], [], [], []
 
     # Each item in this list contains a URL, formatted like https://api.chess.com/pub/player/{user}/games/YYYY/MM
     # Loop over each, and retrieve the games
@@ -79,11 +83,18 @@ def main(args):
             opponent_result.append(game[opponent_colour]["result"])
 
             #opening.append(game["ECOUrl"])
+            #print(game["ECOUrl"])
+            #print(game.keys())
 
-            game_url.append(game["url"])
+            url = game["url"]
+            url_hash = md5(url.encode("utf-8")).hexdigest()
+
+            game_url.append(url)
+            game_url_hash.append(url_hash)
 
     # save to dataframe
     game_dict = {
+        "url_hash" : game_url_hash,
         "time_class" : time_class,
         "player_colour" : player_colour,
         #"opening" : opening,
@@ -94,6 +105,7 @@ def main(args):
 
     game_df = pd.DataFrame(game_dict,
             columns = [
+                "url_hash",
                 "time_class",
                 "player_colour",
                 "opening",
@@ -104,6 +116,8 @@ def main(args):
         )
 
     INFO("Finished retrieving data")
+
+    game_df.head(5)
 
     # load into database
 
@@ -117,7 +131,9 @@ def main(args):
         player_colour VARCHAR(200),\
         player_result VARCHAR(200),\
         opponent_result VARCHAR(200),\
-        game_url\
+        url_hash,\
+        game_url,\
+        CONSTRAINT primary_key_constraint PRIMARY KEY (url_hash)\
     )"
 
     cursor.execute(sql_query)
