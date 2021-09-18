@@ -5,6 +5,7 @@ import logging
 from chessdotcom import get_player_stats, get_player_game_archives
 import pprint
 import pandas as pd
+import re
 
 from hashlib import md5
 
@@ -34,6 +35,25 @@ def get_game_archives(user_name):
     return f"https://api.chess.com/pub/player/{user_name}/games/archives"
 
 #====================================================================================================
+
+def get_opening_eco(pgn):
+    "Get ECO code of opening (encyclopedia of chess openings) """
+
+    # FIXME some validity checks needed
+
+    '\[ECO \"[A-Z][0-9][0-9]\"\] should match the codes like: [ECO "A20"] '
+
+    match = re.search('\[ECO \"[A-Z][0-9][0-9]\"\]', pgn)
+    if match:
+        code = match.group(0)
+        # strip useless characters
+        code = code[6:-2]
+        return code
+    else:
+        return ""
+
+#====================================================================================================
+
 
 def main(args):
 
@@ -82,9 +102,12 @@ def main(args):
             player_result.append(game[user_colour]["result"])
             opponent_result.append(game[opponent_colour]["result"])
 
-            #opening.append(game["ECOUrl"])
-            #print(game["ECOUrl"])
-            #print(game.keys())
+            opening_name = ""
+            try:
+                opening_name = get_opening_eco(game["pgn"])
+                opening.append(opening_name)
+            except KeyError:
+                opening_name = "Unknown"
 
             url = game["url"]
             url_hash = md5(url.encode("utf-8")).hexdigest()
@@ -97,7 +120,7 @@ def main(args):
         "url_hash" : game_url_hash,
         "time_class" : time_class,
         "player_colour" : player_colour,
-        #"opening" : opening,
+        "opening" : opening,
         "game_url" : game_url,
         "player_result" : player_result,
         "opponent_result" : opponent_result
@@ -117,7 +140,7 @@ def main(args):
 
     INFO("Finished retrieving data")
 
-    game_df.head(5)
+    print(game_df.head(20))
 
     # load into database
 
