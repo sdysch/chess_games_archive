@@ -9,11 +9,6 @@ import re
 
 from hashlib import md5
 
-# SQL
-import sqlalchemy
-from sqlalchemy.orm import sessionmaker
-import sqlite3
-
 #====================================================================================================
 
 def INFO(str):
@@ -142,34 +137,6 @@ def main(args):
 
     print(game_df.head(20))
 
-    # load into database
-
-    engine = sqlalchemy.create_engine(args.database_location)
-    conn = sqlite3.connect(f"{user_name}_chess_games.sqlite")
-    cursor = conn.cursor()
-
-    sql_query = f"\
-        CREATE TABLE IF NOT EXISTS {user_name}_chess_games(\
-        time_class VARCHAR(200),\
-        player_colour VARCHAR(200),\
-        player_result VARCHAR(200),\
-        opponent_result VARCHAR(200),\
-        url_hash,\
-        game_url,\
-        CONSTRAINT primary_key_constraint PRIMARY KEY (url_hash)\
-    )"
-
-    cursor.execute(sql_query)
-    INFO("Successfully opened SQL database")
-
-    try:
-        game_df.to_sql(f"{user_name}_chess_games", engine, index = False, if_exists = "append")
-    except:
-        WARN("This game already exists in the database")
-
-    conn.close()
-    INFO("Close database successfully")
-
 
 #====================================================================================================
 
@@ -179,7 +146,5 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--user-name",         metavar = "USERNAME", type = str, help = "chess.com username", required = False, default = "sddish")
-    parser.add_argument("--database-location", metavar = "DATABASE_LOCATION", type = str, help = "database location", required = False, default = "sqlite:///chess_game_archive.sqlite")
-
     args = parser.parse_args()
     main(args)
