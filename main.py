@@ -91,6 +91,9 @@ def main(args):
 
             opponent_colour = "white" if player_colour == "black" else "black"
 
+            if "accuracies" in game.keys():
+                print(game["accuracies"][user_colour])
+
             time_class.append(game["time_class"])
 
             # save player and opponent result, player "win" can be because opponent resigned, flagged, abandoned, etc
